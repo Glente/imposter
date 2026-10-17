@@ -1,0 +1,647 @@
+<!doctype html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<title>Imposter</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Imposter">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#ECEEF5" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#14121E" media="(prefers-color-scheme: dark)">
+<meta name="description" content="Dansk partyspil: find imposteren, der ikke kender det hemmelige ord.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<style>
+:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0;-webkit-text-size-adjust:100%;overscroll-behavior-y:none}
+*,*::before,*::after{box-sizing:border-box}
+img{max-width:100%}
+[hidden]{display:none!important}
+button{touch-action:manipulation}
+</style>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: one centered column, one screen per game phase, big thumb-sized buttons for passing a phone around */
+:root{
+  --bg:#ECEEF5; --surface:#FFFFFF; --surface-2:#E1E4EF; --fg:#1C1A2E; --muted:#5D5A73;
+  --accent:#D63A55; --accent-fg:#FFFFFF; --crew:#2C63D8; --crew-soft:#DCE6FB; --imp-soft:#FBE0E5;
+  --line:#D3D6E3; --good:#1E8A57;
+  --display:"Bricolage Grotesque", "Arial Black", system-ui, sans-serif;
+  --body:"Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --r:18px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#14121E; --surface:#211E31; --surface-2:#2C2840; --fg:#F1EFF8; --muted:#A6A2BD;
+  --accent:#F0566F; --accent-fg:#1A0A0F; --crew:#6E9BFF; --crew-soft:#1E2A4A; --imp-soft:#3B1A24;
+  --line:#37334D; --good:#4CC98A; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#14121E; --surface:#211E31; --surface-2:#2C2840; --fg:#F1EFF8; --muted:#A6A2BD;
+  --accent:#F0566F; --accent-fg:#1A0A0F; --crew:#6E9BFF; --crew-soft:#1E2A4A; --imp-soft:#3B1A24;
+  --line:#37334D; --good:#4CC98A; color-scheme:dark}
+html,body{height:100%}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.45;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 32px;
+  -webkit-tap-highlight-color:transparent}
+main{max-width:480px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+h1,h2,h3{font-family:var(--display);margin:0;text-wrap:balance;line-height:1.05}
+h1{font-size:2.6rem;font-weight:800;letter-spacing:-.02em}
+h2{font-size:1.9rem;font-weight:800;letter-spacing:-.01em}
+h3{font-size:.8rem;font-weight:600;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);font-family:var(--body)}
+p{margin:0}
+.muted{color:var(--muted)}
+.brand{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+.brand h1 span{color:var(--accent)}
+.panel{background:var(--surface);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:12px}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.grow{flex:1;min-width:0}
+input[type=text]{font:inherit;width:100%;padding:12px 14px;border-radius:12px;border:1.5px solid var(--line);background:var(--bg);color:var(--fg)}
+textarea{font:inherit;width:100%;padding:12px 14px;border-radius:12px;border:1.5px solid var(--line);background:var(--bg);color:var(--fg);resize:vertical;box-sizing:border-box}
+input[type=text]{box-sizing:border-box}
+input[type=text]:focus,textarea:focus{outline:none;border-color:var(--crew)}
+.col{display:flex;flex-direction:column;gap:10px}
+.small{font-size:.9rem}
+.seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:6px;background:var(--surface-2);padding:4px;border-radius:16px}
+.seg button{background:transparent;min-height:44px;padding:10px 4px}
+.seg button.on{background:var(--surface);box-shadow:0 1px 3px color-mix(in srgb,var(--fg) 18%,transparent)}
+.cat.own{border-style:dashed;border-color:var(--muted)}
+.cat.own.on{border-style:solid;border-color:var(--crew)}
+.chip button.edit{font-size:1rem;color:var(--fg);padding:2px 4px;font-weight:600}
+.chip button.edit .muted{font-weight:500;font-size:.85rem}
+button{font:inherit;cursor:pointer;border:0;border-radius:14px;padding:12px 16px;font-weight:600;color:var(--fg);background:var(--surface-2);min-height:46px}
+button:focus-visible,input:focus-visible,label:focus-within{outline:3px solid var(--crew);outline-offset:2px}
+button:disabled{opacity:.45;cursor:not-allowed}
+.btn-main{background:var(--accent);color:var(--accent-fg);font-size:1.15rem;padding:16px 20px;min-height:58px;width:100%;font-family:var(--display);font-weight:800;letter-spacing:.01em}
+.btn-crew{background:var(--crew);color:#fff}
+.btn-ghost{background:transparent;border:1.5px solid var(--line)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{display:inline-flex;align-items:center;gap:6px;background:var(--surface-2);border-radius:999px;padding:7px 8px 7px 14px;font-weight:600}
+.chip button{min-height:0;padding:2px 8px;border-radius:999px;background:transparent;color:var(--muted);font-size:1.1rem;line-height:1}
+.cat{display:inline-flex;align-items:center;border-radius:999px;padding:9px 14px;font-weight:600;background:var(--surface-2);border:1.5px solid transparent;cursor:pointer;user-select:none}
+.cat input{position:absolute;opacity:0;pointer-events:none}
+.cat.on{background:var(--crew-soft);border-color:var(--crew);color:var(--fg)}
+.stepper{display:flex;align-items:center;gap:6px}
+.stepper button{width:46px;padding:0;font-size:1.3rem}
+.stepper output{min-width:2ch;text-align:center;font-family:var(--display);font-size:1.5rem;font-weight:800;font-variant-numeric:tabular-nums}
+.toggle{display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer}
+.toggle input{width:22px;height:22px;accent-color:var(--crew);flex:none}
+.setting{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.err{color:var(--accent);font-weight:600;min-height:1.2em}
+
+/* Secret card */
+.stage{display:flex;flex-direction:column;gap:18px;align-items:stretch;text-align:center;padding-top:8px}
+.who{font-size:1.05rem}
+.who b{display:block;font-family:var(--display);font-size:2.4rem;font-weight:800;margin-top:4px;word-break:break-word}
+.card{position:relative;border-radius:24px;min-height:300px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:28px 20px;background:var(--surface);border:2px solid var(--line)}
+.card.cover{cursor:pointer;background:
+  repeating-linear-gradient(135deg,transparent 0 14px,color-mix(in srgb,var(--fg) 6%,transparent) 14px 16px),var(--surface);}
+.card.cover .q{font-family:var(--display);font-size:6rem;font-weight:800;line-height:1;color:var(--crew)}
+.card.crew{background:var(--crew-soft);border-color:var(--crew)}
+.card.imp{background:var(--imp-soft);border-color:var(--accent)}
+.card .label{font-size:.8rem;text-transform:uppercase;letter-spacing:.1em;font-weight:700;color:var(--muted)}
+.card .word{font-family:var(--display);font-size:clamp(2rem,10vw,3rem);font-weight:800;line-height:1.05;word-break:break-word}
+.card.imp .word{color:var(--accent)}
+.card .sub{font-size:1rem}
+.progress{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
+.progress i{width:10px;height:10px;border-radius:50%;background:var(--line)}
+.progress i.done{background:var(--crew)}
+.progress i.now{background:var(--accent)}
+
+/* Discussion */
+.timer{font-family:var(--display);font-size:4.4rem;font-weight:800;font-variant-numeric:tabular-nums;line-height:1}
+.timer.low{color:var(--accent)}
+.fx{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:50}
+.suspense{min-height:60vh;justify-content:center}
+.suspense h2{font-size:2.4rem}
+.dots{display:flex;gap:12px;justify-content:center}
+.dots i{width:16px;height:16px;border-radius:50%;background:var(--accent)}
+@media (prefers-reduced-motion:no-preference){
+  .dots i{animation:dot 1s infinite ease-in-out}
+  .dots i:nth-child(2){animation-delay:.15s}.dots i:nth-child(3){animation-delay:.3s}
+  @keyframes dot{0%,100%{transform:scale(.5);opacity:.4}50%{transform:scale(1.2);opacity:1}}
+  .pop{animation:pop .6s cubic-bezier(.2,1.6,.4,1)}
+  @keyframes pop{from{transform:scale(.3);opacity:0}to{transform:none;opacity:1}}
+  .shake{animation:pop .6s cubic-bezier(.2,1.6,.4,1), shake .5s .6s}
+  @keyframes shake{0%,100%{transform:none}20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
+}
+.turn{align-items:center;text-align:center}
+.turnlist{justify-content:center}
+.tchip{padding:5px 12px;border-radius:999px;background:var(--surface-2);font-weight:600;font-size:.9rem}
+.tchip.done{opacity:.5;text-decoration:line-through}
+.tchip.now{background:var(--crew);color:#fff}
+.turn .row{width:100%}
+.rules{text-align:left;display:flex;flex-direction:column;gap:6px;padding-left:1.2em;margin:0}
+
+/* Vote / scores */
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.vote{padding:16px 10px;font-size:1.05rem;border:2px solid transparent;background:var(--surface);word-break:break-word}
+.vote.on{border-color:var(--accent);background:var(--imp-soft)}
+.scores{display:flex;flex-direction:column;gap:2px}
+.score{display:flex;justify-content:space-between;align-items:center;padding:8px 2px;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
+.score:last-child{border-bottom:0}
+.score .pts{font-family:var(--display);font-weight:800;font-size:1.25rem}
+.score .plus{color:var(--good);font-weight:700;font-size:.9rem;margin-right:8px}
+.verdict{font-size:1.1rem}
+.verdict.win{color:var(--good)}
+.verdict.lose{color:var(--accent)}
+.tag{display:inline-block;padding:2px 10px;border-radius:999px;background:var(--imp-soft);color:var(--accent);font-weight:700;font-size:.85rem}
+.foot{font-size:.85rem;color:var(--muted);text-align:center}
+@media (prefers-reduced-motion:no-preference){
+  .card.flip{animation:flip .32s ease-out}
+  @keyframes flip{from{transform:rotateY(80deg);opacity:.3}to{transform:none;opacity:1}}
+}
+</style>
+</head>
+<body>
+
+<main id="app"></main>
+
+<script>
+const WORDS = {
+  "Dyr": "#1;Hund|Snor;Kat|Pels;Ko|Mark;Hest|Stald;Løve|Konge;Elefant|Savanne;Giraf|Hals;Pingvin|Is;Haj|Hav;Frø|Dam;#2;Ugle|Nat;Edderkop|Spind;Kænguru|Hop;Slange|Gift;Bjørn|Hi;Krokodille|Flod;Papegøje|Fjer;Egern|Nødder;Delfin|Bølge;Ræv|Skov;Myre|Tue;Flagermus|Hule;Snegl|Hus;#3;Næbdyr|Æg;Dovendyr|Langsom;Blæksprutte|Arme;Søpindsvin|Pigge;Kamæleon|Farver;Bæver|Dæmning;Narhval|Tand;Flamingo|Ét ben;Muldvarp|Gang",
+  "Mad & drikke": "#1;Pizza|Ovn;Burger|Bøf;Is|Sommer;Pandekager|Pande;Popcorn|Biograf;Spaghetti|Gaffel;Kaffe|Morgen;Pølse i brød|Vogn;Kartofler|Jord;Æble|Træ;#2;Smørrebrød|Frokost;Sushi|Ris;Frikadeller|Hakket;Flæskesteg|Svær;Leverpostej|Pålæg;Lakrids|Sort;Kanelsnegl|Bager;Tacos|Mexico;Æblekage|Dessert;Wienerbrød|Morgenbord;Risalamande|Mandel;Øl|Bar;#3;Rødgrød med fløde|Udtale;Øllebrød|Gammeldags;Koldskål|Kammerjunker;Stjerneskud|Fisk;Brunede kartofler|Sukker;Tarteletter|Høns;Æbleskiver|Jul;Hindbærsnitte|Glasur;Rugbrød|Kerner;Sild|Snaps",
+  "Steder i Danmark": "#1;Tivoli|Forlystelser;Legoland|Klodser;Den Lille Havfrue|Statue;Zoologisk Have|Dyr;Bornholm|Klipper;Aarhus|Jylland;Odense|Fyn;#2;Skagen|Nord;Christiania|Fristad;Nyhavn|Kanal;Roskilde Festival|Mudder;Rundetårn|Udsigt;Amalienborg|Vagt;Strøget|Shopping;Lalandia|Badeland;Djurs Sommerland|Rutsjebane;#3;Møns Klint|Kridt;Kronborg|Hamlet;Råbjerg Mile|Sand;Himmelbjerget|Bakke;Storebæltsbroen|Bro;Den Blå Planet|Akvarium;Dyrehavsbakken|Pjerrot;Jelling|Runesten;Fanø|Vadehav",
+  "Steder": "#1;Skole|Klasse;Hospital|Seng;Lufthavn|Pas;Supermarked|Kasse;Biograf|Lærred;Strand|Sand;Svømmehal|Klor;#2;Bibliotek|Stille;Fitnesscenter|Sved;Kirke|Klokke;Fængsel|Celle;Restaurant|Menu;Tandlæge|Bor;Campingplads|Telt;Skøjtebane|Glat;Natklub|Dansegulv;Frisørsalon|Spejl;#3;Bryllup|Ring;Ubåd|Dyb;Rumstation|Vægtløs;Kasino|Jetoner;Fyrtårn|Kyst;Bowlinghal|Sko;Begravelse|Sort;Retssal|Dommer;Laboratorium|Kittel;Tankstation|Pumpe",
+  "Job": "#1;Læge|Kittel;Brandmand|Stige;Politibetjent|Uniform;Lærer|Tavle;Kok|Køkken;Frisør|Saks;Postbud|Brev;Bager|Mel;#2;Pilot|Cockpit;Tømrer|Hammer;Astronaut|Raket;Journalist|Nyhed;Landmand|Traktor;Advokat|Retssal;Sygeplejerske|Vagt;Skuespiller|Rolle;DJ|Musik;Buschauffør|Rute;Gartner|Have;Influencer|Følgere;#3;Tryllekunstner|Hat;Arkæolog|Udgravning;Dommer|Kendelse;Bedemand|Kiste;Smed|Ambolt;Revisor|Regnskab;Psykolog|Sofa;Tolk|Sprog;Fyrpasser|Lys;Spion|Hemmelig",
+  "Hæmatologi": "#1;Blodtransfusion|Pose;Hæmoglobin|Ilt;Blodprøve|Nål;Knoglemarv|Knogle;Leukæmi|Kræft;Blodtype|AB;Anæmi|Træthed;Blodbank|Donor;Jerntabletter|Mave;Blodtryk|Manchet;#2;Erytrocyt|Skive;Leukocyt|Forsvar;Trombocyt|Størkning;Lymfom|Lymfeknude;Myelomatose|Knogler;Hæmofili|Bløder;Kemoterapi|Kur;Knoglemarvsbiopsi|Hoftekam;Blodudstrygning|Mikroskop;AK-behandling|INR;Neutropeni|Feber;Trombose|Ben;Stamcelletransplantation|Konditionering;#3;Sigdcelleanæmi|Form;Thalassæmi|Middelhav;Hæmokromatose|Jern;Polycytæmia vera|JAK2;Philadelphia-kromosom|Translokation;Retikulocyt|Ung;CAR-T|Genmodificeret;DIC|Koagulation;Ferritin|Lager;Von Willebrand|Faktor;Flowcytometri|Laser;Graft-versus-host|Immun;Plasmaferese|Udskiftning;ITP|Petekkier;Auerstave|AML",
+  "Diktatorer": "#1;Hitler|Tyskland;Stalin|Sovjetunionen;Mussolini|Italien;Kim Jong-un|Nordkorea;Napoleon|Frankrig;Saddam Hussein|Irak;Fidel Castro|Cuba;#2;Mao|Kina;Franco|Spanien;Pinochet|Chile;Gaddafi|Libyen;Idi Amin|Uganda;Kim Il-sung|Evig præsident;Ceaușescu|Rumænien;Pol Pot|Cambodja;Julius Cæsar|Rom;#3;Mobutu|Zaire;Salazar|Portugal;Tito|Jugoslavien;Papa Doc|Haiti;Lukasjenko|Hviderusland;Enver Hoxha|Albanien;Mugabe|Zimbabwe;Trujillo|Caribien;Marcos|Filippinerne;Batista|Havana;Somoza|Nicaragua",
+  "Krig": "#1;Anden Verdenskrig|1945;Første Verdenskrig|Skyttegrav;Vikingetogt|Langskib;Kampvogn|Larvefødder;Soldat|Hjelm;Atombombe|Svampesky;Ridder|Rustning;#2;Den Kolde Krig|Mur;Vietnamkrigen|Jungle;D-dag|Normandiet;Modstandsbevægelsen|Sabotage;Besættelsen|1940;Torpedo|Under vandet;Hundredårskrigen|Lang;Korstog|Jerusalem;Den Trojanske Hest|List;Befrielsen|Maj;#3;Slaget ved Dybbøl|1864;Napoleonskrigene|Waterloo;Blitzkrieg|Hurtig;Stalingrad|Vinter;Pearl Harbor|Hawaii;Genèvekonventionen|Regler;Våbenhvile|Pause;Rosekrigene|England;Den Spanske Borgerkrig|Guernica;Golfkrigen|Olie;Enigma|Kode;Trediveårskrigen|Religion",
+  "Fodbold": "#1;Straffespark|Plet;Målmand|Handsker;Dommer|Fløjte;Rødt kort|Udvisning;Gult kort|Advarsel;Hjørnespark|Flag;Messi|Argentina;Ronaldo|Portugal;VM|Fire år;Stadion|Tribune;#2;Offside|Linje;Frispark|Mur;FC København|Løve;Brøndby|Vestegnen;Champions League|Hymne;Hattrick|Tre;Udskiftning|Bænk;Træner|Taktik;Haaland|Norge;Mbappé|Frankrig;Zlatan|Sverige;Landsholdet|Rød-hvid;Superligaen|Danmark;#3;VAR|Skærm;Saksespark|Akrobatik;Hooligan|Uro;Transfervindue|Handel;EM 1992|Overraskelse;Laudrup|Brødre;Danish Dynamite|80'erne;Parken|Østerbro;Tunnel|Ben;Panenka|Chip;Straffesparkskonkurrence|Nerver",
+  "Sport & fritid": "#1;Fodbold|Mål;Håndbold|Hal;Tennis|Net;Svømning|Bane;Cykling|Tour;Skak|Brik;Løb|Maraton;#2;Golf|Hul;Ishockey|Kølle;Boksning|Handsker;Skiløb|Bakke;Bowling|Kegle;Yoga|Måtte;Dart|Pil;Badminton|Ketsjer;Ridning|Sadel;Fiskeri|Krog;#3;Surfing|Bølge;Klatring|Reb;Padel|Glasvæg;Curling|Kost;Fægtning|Klinge;Petanque|Kugler;Kitesurfing|Drage;Orienteringsløb|Kort;Krolf|Have;Bueskydning|Skive",
+  "Ting i hjemmet": "#1;Køleskab|Koldt;Sofa|Stue;Tandbørste|Badeværelse;Seng|Dyne;Lampe|Lys;Gaffel|Bestik;Ur|Tid;Pude|Blød;#2;Støvsuger|Rengøring;Fjernbetjening|Knapper;Opvaskemaskine|Tallerken;Spejl|Refleks;Brødrister|Morgenmad;Vaskemaskine|Tøj;Paraply|Regn;Stearinlys|Hygge;Badekar|Skum;Mikroovn|Opvarme;#3;Hårtørrer|Varm luft;Strygejern|Krøller;Proptrækker|Vin;Dørmåtte|Sko;Hvidløgspresser|Køkken;Røgalarm|Bip;Osteskærer|Skive;Kaffefilter|Papir;Bøjle|Skab;Sikringsskab|Strøm",
+  "Transport": "#1;Cykel|Pedal;Bus|Stoppested;Tog|Perron;Fly|Vinge;Bil|Rat;Båd|Vand;#2;Færge|Havn;Taxa|Bagsæde;Metro|Undergrund;Helikopter|Propel;Raket|Rummet;Løbehjul|Fortov;Motorcykel|Hjelm;Ambulance|Sirene;Traktor|Mark;Skateboard|Rampe;#3;Sejlbåd|Vind;Kano|Pagaj;Luftballon|Kurv;Ladcykel|Kasse;Elbil|Strøm;Hestevogn|Kusk;Kabelbane|Bjerg;Hundeslæde|Sne;Svævefly|Stilhed;Tandem|To",
+  "Lande": "#1;Frankrig|Vin;Italien|Pasta;USA|Dollar;Norge|Fjord;Sverige|IKEA;Tyskland|Autobahn;Spanien|Flamenco;Kina|Mur;#2;Japan|Sushi;Egypten|Pyramide;Grønland|Indlandsis;Australien|Kænguru;Brasilien|Karneval;Mexico|Sombrero;England|Te;Holland|Tulipan;#3;Indien|Krydderier;Island|Vulkan;Grækenland|Ruiner;Canada|Ahorn;Thailand|Tempel;Færøerne|Får;Schweiz|Bank;Peru|Lama;Marokko|Marked;Finland|Sauna",
+  "Jul & højtider": "#1;Juletræ|Gran;Julemand|Skæg;Påskeæg|Chokolade;Fødselsdag|Lagkage;Halloween|Græskar;Gaver|Papir;Juleaften|December;#2;Nisse|Loft;Fastelavn|Tønde;Sankthans|Bål;Nytårsaften|Midnat;Pebernødder|Småkager;Gløgg|Varm;Julekalender|Låge;Valentinsdag|Hjerte;Konfirmation|Fest;#3;Adventskrans|Søndag;Mortensaften|And;Grundlovsdag|Tale;Mandelgave|Gris;Kransekage|Ringe;Påskefrokost|Lam;Allehelgen|Lys;Helligtrekonger|Konger;Juleklip|Saks",
+  "Film & figurer": "#1;Harry Potter|Tryllestav;Spider-Man|Spind;Batman|Kappe;Frost|Søstre;Shrek|Sump;Super Mario|Svampe;Minions|Gul;Peter Plys|Honning;Anders And|Onkel;#2;Star Wars|Lyssværd;Olsen-banden|Plan;Pippi Langstrømpe|Fletninger;Ringenes Herre|Ring;Titanic|Isbjerg;Pokémon|Træner;Gurli Gris|Mudder;James Bond|Agent;Toy Story|Legetøj;#3;Rasmus Klump|Bjørn;Matador|Købmand;Jagten|Børnehave;Klovn|Kanotur;Krummerne|Familie;Borgen|Politik;Riget|Hospital;Druk|Lærere",
+  "Danske kendisser": "#1;Mads Mikkelsen|Hollywood;H.C. Andersen|Eventyr;Kim Larsen|Gasolin;Dronning Margrethe|Nytårstale;Peter Schmeichel|Handsker;Caroline Wozniacki|Ketsjer;#2;Christian Eriksen|Midtbane;Mette Frederiksen|Statsminister;Lukas Graham|Christiania;MØ|Pop;Medina|Kun for mig;Anders Matthesen|Arne;Jonas Vingegaard|Gul trøje;Mikkel Hansen|Håndbold;Casper Christensen|Klovn;#3;Karen Blixen|Afrika;Niels Bohr|Atom;Søren Kierkegaard|Filosof;Tycho Brahe|Stjerner;Viktor Axelsen|Badminton;Lars Ulrich|Trommer;Tobias Rahim|Stor mand;Sofie Linde|Vært;Bubber|Børne-tv",
+  "Musik": "#1;Guitar|Strenge;Trommer|Stikker;Klaver|Tangenter;Violin|Bue;Rap|Rim;Karaoke|Mikrofon;Koncert|Scene;#2;Saxofon|Jazz;Opera|Sopran;Techno|Bas;Eurovision|Point;Vinylplade|Pickup;Boyband|Dans;Dirigent|Pind;Mundharmonika|Blues;Spotify|Playliste;#3;Tuba|Messing;Harpe|Engle;Metronom|Takt;Barbie Girl|Aqua;Ørehænger|Melodi;Synthesizer|80'erne;A cappella|Stemmer;Kor|Mange;Xylofon|Køller",
+  "90'erne & 00'erne": "#1;Tamagotchi|Æg;Game Boy|Nintendo;Spice Girls|Girl power;Backstreet Boys|Boyband;Walkman|Kassette;Furby|Pels;#2;Nokia 3310|Snake;Discman|Spring;MSN Messenger|Status;Rollerblades|Hjul;VHS|Spole;Pokémonkort|Samle;Buffalo-sko|Plateau;Diskette|Gem;#3;Arto|Profil;Pogs|Brikker;Y2K|Computer;Polyfoniske ringetoner|Mobil;Myspace|Top 8;iPod|Hvide stik;Tic Tac Toe|Pigegruppe;Hotmail|Indbakke;Bamse og Kylling|Rødt",
+  "Fest & druk": "#1;Øl|Kasse;Tømmermænd|Morgen;Fredagsbar|Uge;Julefrokost|Firma;Natmad|Sent;Shots|Glas;#2;Beerpong|Bold;Snaps|Skål;Bodega|Stamgæst;Afterparty|Fortsætte;Studenterkørsel|Vogn;Cocktail|Paraply;Dørmand|Kø;Drukspil|Regler;#3;Kapsejlads|Rus;Garderobe|Nummer;Sodavandsis|Barn;Gin og tonic|Agurk;Rustur|Introuge;Walk of shame|Morgen;Fadølsanlæg|Hane;Kebab|Klokken tre;Rødvin|Tænder",
+  "Voksen (18+)": "#1;Kys|Læber;Tinder|Swipe;Første date|Nervøs;Ekskæreste|Fortid;Bryllupsnat|Hvid;#2;Blind date|Ukendt;Scorereplik|Bar;Lingeri|Blonder;Strip-poker|Kort;Flirt|Blik;One night stand|Én gang;Håndjern|Metal;#3;Skilsmisse|Advokat;Sexshop|Butik;Morgenhår|Pude;Svigermor|Familie;Hickey|Hals;Kondom|Gummi;Massageolie|Glat"
+};
+const BUILTIN = Object.keys(WORDS);
+const DEF = {
+  players: ["Andreas","Sofie","Mads","Ida"],
+  cats: BUILTIN.filter(c=>c!=="Voksen (18+)"),
+  imposters: 1, showCat: true, hint: false, hintLevel: "none", diff: "mix", minutes: 3,
+  mode: "classic", chaos: false, custom: [], sound: true,
+  scores: {}, used: []
+};
+const LS = "imposter-dk-v1";
+const KEYS = ["players","cats","imposters","showCat","hint","hintLevel","diff","minutes","mode","chaos","custom","sound","scores","used"];
+function load(){ try{ const s = JSON.parse(localStorage.getItem(LS)); if(s && Array.isArray(s.players)){ const o = Object.assign(JSON.parse(JSON.stringify(DEF)), s); if(!Array.isArray(o.custom)) o.custom=[]; if(!s.hintLevel) o.hintLevel = s.hint ? "weak" : "none"; o.cats = (o.cats||[]).filter(c=>WORDS[c]||o.custom.some(x=>x.name===c)); return o; } }catch(e){} return JSON.parse(JSON.stringify(DEF)); }
+function save(){ try{ const o={}; KEYS.forEach(k=>o[k]=S[k]); localStorage.setItem(LS, JSON.stringify(o)); }catch(e){} }
+function allCats(){ return BUILTIN.concat(S.custom.map(c=>c.name)); }
+function parseCustom(text){
+  const seen=new Set(), out=[];
+  text.split(/\n|;/).forEach(line=>{
+    const [w,h]=line.split("/").map(s=>(s||"").trim());
+    if(w && !seen.has(w.toLowerCase())){ seen.add(w.toLowerCase()); out.push({w, h:h||""}); }
+  });
+  return out;
+}
+function wordsOf(cat){
+  if(WORDS[cat]){ let d=2; const out=[]; WORDS[cat].split(";").forEach(e=>{ if(e[0]==="#"){ d=+e.slice(1); return; } const [w,h]=e.split("|"); out.push({w,h,d}); }); return out; }
+  const c = S.custom.find(x=>x.name===cat); return c ? parseCustom(c.text).map(x=>Object.assign(x,{d:0})) : [];
+}
+
+let S = Object.assign(load(), {screen:"setup", round:null});
+let tick = null;
+const app = document.getElementById("app");
+const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const rnd = n => Math.floor(Math.random()*n);
+const shuffle = a => { a = a.slice(); for(let i=a.length-1;i>0;i--){ const j=rnd(i+1); [a[i],a[j]]=[a[j],a[i]]; } return a; };
+const maxImp = () => Math.max(1, Math.floor((S.players.length-1)/2));
+
+let wakeLock = null;
+async function keepAwake(){
+  try{ if(S.screen!=="setup" && navigator.wakeLock && !wakeLock && document.visibilityState==="visible"){ wakeLock = await navigator.wakeLock.request("screen"); wakeLock.addEventListener("release",()=>{ wakeLock=null; }); } }catch(e){ wakeLock=null; }
+}
+document.addEventListener("visibilitychange", keepAwake);
+function go(screen){ S.screen = screen; render(); window.scrollTo(0,0); keepAwake(); }
+
+/* ---------- Setup ---------- */
+function setupView(){
+  const n = S.players.length;
+  if(S.imposters > maxImp()) S.imposters = maxImp();
+  const hasScores = S.players.some(p => S.scores[p]);
+  const CATS = allCats();
+  const uc = S.mode==="undercover";
+  const ed = S.editing!=null ? S.custom[S.editing] : null;
+  return `
+  <div class="brand"><h1>Imp<span>o</span>ster</h1><span class="muted">${n} spillere</span></div>
+  <p class="muted">${uc?"Alle får et hemmeligt ord, men imposteren får et lidt andet ord og ved det ikke selv. Giv et ord hver på skift, og find den, der skiller sig ud.":"Alle får det samme hemmelige ord, undtagen imposteren. Giv hinanden et ord hver på skift, og find ud af, hvem der bluffer."}</p>
+
+  <section class="panel">
+    <h3>Spiltype</h3>
+    <div class="seg" role="radiogroup">
+      <button data-mode="classic" role="radio" aria-checked="${!uc}" class="${!uc?"on":""}">Klassisk</button>
+      <button data-mode="undercover" role="radio" aria-checked="${uc}" class="${uc?"on":""}">Undercover</button>
+    </div>
+    <p class="muted small">${uc?"Imposteren får et ord fra samme kategori, f.eks. Kat i stedet for Hund, og tror selv, at alle har samme ord.":"Imposteren ved, at de er imposter, og kender ikke ordet. Bliver de fanget, får de ét gæt på ordet."}</p>
+    ${uc?"":`<label class="toggle"><span>Kaos-runder<br><span class="muted small">Indimellem er alle imposter, uden at nogen ved det.</span></span><input type="checkbox" id="chaos" ${S.chaos?"checked":""}></label>`}
+  </section>
+
+  <section class="panel">
+    <h3>Spillere</h3>
+    <form id="addForm" class="row" autocomplete="off">
+      <input id="nameIn" class="grow" type="text" placeholder="Tilføj navn" maxlength="18">
+      <button type="submit" class="btn-crew">Tilføj</button>
+    </form>
+    <div class="chips">${S.players.map((p,i)=>`<span class="chip">${esc(p)}<button data-del="${i}" aria-label="Fjern ${esc(p)}">×</button></span>`).join("")}</div>
+    <p class="err" id="err"></p>
+  </section>
+
+  <section class="panel">
+    <div class="row" style="justify-content:space-between"><h3>Kategorier</h3><button class="btn-ghost" id="allCats" style="min-height:36px;padding:6px 12px">${S.cats.length===CATS.length?"Fravælg alle":"Vælg alle"}</button></div>
+    <div class="chips">${CATS.map(c=>`<label class="cat ${S.cats.includes(c)?"on":""} ${WORDS[c]?"":"own"}"><input type="checkbox" data-cat="${esc(c)}" ${S.cats.includes(c)?"checked":""}>${esc(c)}</label>`).join("")}</div>
+  </section>
+
+  <section class="panel">
+    <h3>Egne kategorier</h3>
+    ${S.custom.length?`<div class="chips">${S.custom.map((c,i)=>`<span class="chip"><button class="edit" data-edit="${i}" aria-label="Redigér ${esc(c.name)}">${esc(c.name)} <span class="muted">${parseCustom(c.text).length} ord</span></button><button data-delcat="${i}" aria-label="Slet ${esc(c.name)}">×</button></span>`).join("")}</div>`:`<p class="muted small">Lav jeres egen kategori med interne jokes, navne fra vennegruppen eller steder, I kender.</p>`}
+    <form id="customForm" class="col" autocomplete="off">
+      <input id="cName" type="text" maxlength="24" placeholder="Navn på kategori, f.eks. Vores venner" value="${ed?esc(ed.name):""}">
+      <textarea id="cWords" rows="5" placeholder="Ét ord per linje. Skriv evt. et hint efter /, f.eks.&#10;Sommerhuset / Ferie&#10;Mormors lagkage / Fødselsdag">${ed?esc(ed.text):""}</textarea>
+      <div class="row">
+        <button type="submit" class="btn-crew grow">${ed?"Gem ændringer":"Gem kategori"}</button>
+        ${ed?`<button type="button" class="btn-ghost" id="cCancel">Annullér</button>`:""}
+      </div>
+      <p class="err" id="cErr"></p>
+    </form>
+  </section>
+
+  <section class="panel">
+    <div class="setting"><span>Antal imposters</span>
+      <div class="stepper"><button data-step="imp:-1" aria-label="Færre">−</button><output>${S.imposters}</output><button data-step="imp:1" aria-label="Flere">+</button></div></div>
+    <div class="setting"><span>Diskussionstid (min)</span>
+      <div class="stepper"><button data-step="min:-1" aria-label="Kortere">−</button><output>${S.minutes}</output><button data-step="min:1" aria-label="Længere">+</button></div></div>
+    <div class="col"><span>Sværhedsgrad</span>
+      <div class="seg">${[["easy","Let"],["medium","Mellem"],["hard","Svær"],["mix","Blandet"]].map(([k,l])=>`<button data-diff="${k}" aria-pressed="${S.diff===k}" class="${S.diff===k?"on":""}">${l}</button>`).join("")}</div>
+      <span class="muted small">${{easy:"Kendte ord, som alle kan være med på.",medium:"Lidt mere at tænke over.",hard:"Sjældnere ord, hvor det er svært at give gode ledetråde.",mix:"Ord fra alle sværhedsgrader."}[S.diff]} Egne kategorier er altid med.</span></div>
+    <label class="toggle"><span>Lyd og effekter</span><input type="checkbox" id="sound" ${S.sound?"checked":""}></label>
+    ${uc?"":`<label class="toggle"><span>Imposteren ser kategorien</span><input type="checkbox" id="showCat" ${S.showCat?"checked":""}></label>
+    <div class="col"><span>Hint til imposteren</span>
+      <div class="seg">${[["none","Intet"],["weak","Svagt"],["strong","Stærkt"]].map(([k,l])=>`<button data-hint="${k}" aria-pressed="${S.hintLevel===k}" class="${S.hintLevel===k?"on":""}">${l}</button>`).join("")}</div>
+      <span class="muted small">${{none:"Imposteren får ingen hjælp.",weak:"Imposteren får et ord, der hænger løst sammen med det hemmelige ord.",strong:"Imposteren får hint-ordet plus forbogstav og antal bogstaver."}[S.hintLevel]}</span></div>`}
+  </section>
+
+  ${hasScores ? `<section class="panel"><div class="row" style="justify-content:space-between"><h3>Point</h3><button class="btn-ghost" id="resetScores" style="min-height:36px;padding:6px 12px">Nulstil</button></div>${scoreList()}</section>` : ""}
+
+  <button class="btn-main" id="start" ${n<3||!S.cats.length?"disabled":""}>Start runde</button>
+  <p class="foot">${n<3?"I skal være mindst 3 spillere.":!S.cats.length?"Vælg mindst én kategori.":"Én telefon, som går på omgang."}</p>`;
+}
+
+function bindSetup(){
+  const err = document.getElementById("err");
+  document.getElementById("addForm").onsubmit = e => {
+    e.preventDefault();
+    const inp = document.getElementById("nameIn");
+    const name = inp.value.trim();
+    if(!name) return;
+    if(S.players.some(p=>p.toLowerCase()===name.toLowerCase())){ err.textContent = "Det navn er allerede med."; return; }
+    if(S.players.length>=20){ err.textContent = "Max 20 spillere."; return; }
+    S.players.push(name); save(); render();
+    document.getElementById("nameIn").focus();
+  };
+  app.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{ S.players.splice(+b.dataset.del,1); save(); render(); });
+  app.querySelectorAll("[data-cat]").forEach(c=>c.onchange=()=>{
+    const k=c.dataset.cat; S.cats = c.checked ? [...S.cats,k] : S.cats.filter(x=>x!==k); save(); render(); });
+  const CATS = allCats();
+  document.getElementById("allCats").onclick=()=>{ S.cats = S.cats.length===CATS.length?[]:CATS.slice(); save(); render(); };
+  app.querySelectorAll("[data-mode]").forEach(b=>b.onclick=()=>{ S.mode=b.dataset.mode; save(); render(); });
+  const ch=document.getElementById("chaos"); if(ch) ch.onchange=e=>{S.chaos=e.target.checked; save();};
+  app.querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>{ S.editing=+b.dataset.edit; render(); document.getElementById("cWords").focus(); });
+  app.querySelectorAll("[data-delcat]").forEach(b=>b.onclick=()=>{
+    const name=S.custom[+b.dataset.delcat].name;
+    S.custom.splice(+b.dataset.delcat,1); S.cats=S.cats.filter(c=>c!==name); S.editing=null; save(); render(); });
+  const cc=document.getElementById("cCancel"); if(cc) cc.onclick=()=>{ S.editing=null; render(); };
+  document.getElementById("customForm").onsubmit=e=>{
+    e.preventDefault();
+    const cErr=document.getElementById("cErr");
+    const name=document.getElementById("cName").value.trim(), text=document.getElementById("cWords").value;
+    const old = S.editing!=null ? S.custom[S.editing] : null;
+    if(!name){ cErr.textContent="Giv kategorien et navn."; return; }
+    if(WORDS[name] || S.custom.some(c=>c.name.toLowerCase()===name.toLowerCase() && c!==old)){ cErr.textContent="Der findes allerede en kategori med det navn."; return; }
+    if(parseCustom(text).length<3){ cErr.textContent="Skriv mindst 3 ord, ét per linje."; return; }
+    if(old){ S.cats=S.cats.map(c=>c===old.name?name:c); old.name=name; old.text=text; }
+    else { S.custom.push({name,text}); S.cats.push(name); }
+    S.editing=null; save(); render();
+  };
+  app.querySelectorAll("[data-step]").forEach(b=>b.onclick=()=>{
+    const [k,d]=b.dataset.step.split(":");
+    if(k==="imp") S.imposters = Math.min(maxImp(), Math.max(1, S.imposters + +d));
+    else S.minutes = Math.min(10, Math.max(1, S.minutes + +d));
+    save(); render(); });
+  document.getElementById("sound").onchange=e=>{S.sound=e.target.checked; save(); if(S.sound) SFX.flip();};
+  const sc=document.getElementById("showCat"); if(sc) sc.onchange=e=>{S.showCat=e.target.checked; save();};
+  app.querySelectorAll("[data-diff]").forEach(b=>b.onclick=()=>{ S.diff=b.dataset.diff; save(); render(); });
+  app.querySelectorAll("[data-hint]").forEach(b=>b.onclick=()=>{ S.hintLevel=b.dataset.hint; save(); render(); });
+  const rs = document.getElementById("resetScores"); if(rs) rs.onclick=()=>{ S.scores={}; save(); render(); };
+  document.getElementById("start").onclick=startRound;
+}
+
+/* ---------- Round ---------- */
+function startRound(){
+  const pool = [];
+  const lvl = {easy:1, medium:2, hard:3}[S.diff];
+  S.cats.forEach(c => wordsOf(c).forEach(x => { if(!lvl || !x.d || x.d===lvl) pool.push({c, w:x.w, h:x.h}); }));
+  if(!pool.length) S.cats.forEach(c => wordsOf(c).forEach(x => pool.push({c, w:x.w, h:x.h})));
+  if(!pool.length) return;
+  let fresh = pool.filter(x=>!S.used.includes(x.w));
+  if(!fresh.length){ S.used = []; fresh = pool; }
+  const pick = fresh[rnd(fresh.length)];
+  S.used.push(pick.w); if(S.used.length>300) S.used = S.used.slice(-300);
+  const mode = S.mode;
+  let decoy = null;
+  if(mode==="undercover"){ const same = wordsOf(pick.c).filter(x=>x.w!==pick.w); decoy = same.length ? same[rnd(same.length)].w : null; }
+  const chaos = mode==="classic" && S.chaos && Math.random() < 0.15;
+  const all = S.players.map((_,i)=>i);
+  const imps = chaos ? all : shuffle(all).slice(0, Math.min(S.imposters, maxImp()));
+  const crew = all.filter(i=>!imps.includes(i));
+  const starterPool = crew.length ? crew : all;
+  S.round = { word:pick.w, cat:pick.c, hint:pick.h, imps, mode, decoy, chaos, turn:0, shown:false,
+              starter: starterPool[rnd(starterPool.length)], left: S.minutes*60, running:false, votes:[], guessed:null, scored:false };
+  save(); go("pass");
+}
+
+function progress(){
+  const R=S.round;
+  return `<div class="progress" aria-label="Spiller ${R.turn+1} af ${S.players.length}">${S.players.map((_,i)=>`<i class="${i<R.turn?"done":i===R.turn?"now":""}"></i>`).join("")}</div>`;
+}
+
+function passView(){
+  const R=S.round, name=S.players[R.turn];
+  if(!R.shown) return `
+  <div class="stage">
+    ${progress()}
+    <p class="who">Giv telefonen til<b>${esc(name)}</b></p>
+    <div class="card cover" id="reveal" role="button" tabindex="0" aria-label="Vis mit kort">
+      <div class="q">?</div><p class="muted">Tryk for at se dit kort.<br>Lad ingen andre kigge med.</p>
+    </div>
+    <button class="btn-ghost" id="quit">Afbryd runden</button>
+  </div>`;
+  const isImp = R.imps.includes(R.turn);
+  const last = R.turn === S.players.length-1;
+  const others = R.chaos ? [] : R.imps.filter(i=>i!==R.turn).map(i=>esc(S.players[i]));
+  const uc = R.mode==="undercover";
+  const card = uc ? `
+    <div class="card crew flip">
+      <span class="label">${esc(R.cat)}</span>
+      <div class="word">${esc(isImp && R.decoy ? R.decoy : R.word)}</div>
+      <p class="muted">Giv et ord, der passer til dit ord. Pas på: én af jer har et lidt andet ord, og det kan være dig.</p>
+    </div>` : isImp ? `
+    <div class="card imp flip">
+      <span class="label">Du er</span>
+      <div class="word">IMPOSTER</div>
+      ${S.showCat?`<p class="sub">Kategori: <b>${esc(R.cat)}</b></p>`:""}
+      ${S.hintLevel!=="none"&&R.hint?`<p class="sub">Hint: <b>${esc(R.hint)}</b></p>`:""}
+      ${S.hintLevel==="strong"?`<p class="sub">Starter med <b>${esc(R.word[0].toUpperCase())}</b>, ${R.word.replace(/[^\p{L}\p{N}]/gu,"").length} bogstaver${/\s/.test(R.word)?" (flere ord)":""}</p>`:""}
+      ${others.length?`<p class="sub">Din makker: <b>${others.join(", ")}</b></p>`:""}
+      <p class="muted">Du kender ikke ordet. Bluf dig igennem og prøv at gætte det.</p>
+    </div>` : `
+    <div class="card crew flip">
+      <span class="label">${esc(R.cat)}</span>
+      <div class="word">${esc(R.word)}</div>
+      <p class="muted">Giv et ord, der viser at du kender det, uden at afsløre det for imposteren.</p>
+    </div>`;
+  return `
+  <div class="stage">
+    ${progress()}
+    <p class="who">${esc(name)}</p>
+    ${card}
+    <button class="btn-main" id="next">${last?"Skjul og start diskussionen":"Skjul og giv videre"}</button>
+  </div>`;
+}
+function bindPass(){
+  const R=S.round;
+  const rev = document.getElementById("reveal");
+  if(rev){ rev.onclick=()=>{R.shown=true; SFX.flip(); render();}; rev.onkeydown=e=>{ if(e.key==="Enter"||e.key===" "){e.preventDefault(); rev.click();} }; }
+  const q = document.getElementById("quit"); if(q) q.onclick=()=>{ S.round=null; go("setup"); };
+  const nx = document.getElementById("next");
+  if(nx) nx.onclick=()=>{ R.shown=false; if(R.turn < S.players.length-1){ R.turn++; go("pass"); } else go("discuss"); };
+}
+
+/* ---------- Discussion ---------- */
+const fmt = s => `${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}`;
+function discussView(){
+  const R=S.round;
+  return `
+  <div class="stage">
+    <h2>Diskussion</h2>
+    ${turnPanel()}
+    <div class="panel" style="align-items:center">
+      <div class="timer ${R.left<=30?"low":""}" id="timer">${fmt(R.left)}</div>
+      <div class="row" style="justify-content:center">
+        <button class="btn-crew" id="tgl">${R.running?"Pause":R.left===S.minutes*60?"Start ur":"Fortsæt"}</button>
+        <button class="btn-ghost" id="rst">Nulstil</button>
+      </div>
+    </div>
+    <ol class="rules muted">
+      <li>Gå med uret. Hver spiller siger ét ord, der passer til det hemmelige ord.</li>
+      <li>Tag en eller to runder, og diskutér så, hvem I mistænker.</li>
+      <li>${R.mode==="undercover"?"Én af jer har et andet ord og ved det ikke. Lyt efter ord, der ikke helt passer.":"Imposteren skal blende ind og samtidig prøve at gætte ordet."}</li>
+    </ol>
+    <button class="btn-main" id="toVote">Til afstemning</button>
+  </div>`;
+}
+function turnOrder(){ const R=S.round, n=S.players.length; return S.players.map((_,k)=>(R.starter+k)%n); }
+function turnPanel(){
+  const R=S.round, n=S.players.length, order=turnOrder(), sp=R.speak||0;
+  const cur=order[sp%n], lap=Math.floor(sp/n)+1, pos=sp%n;
+  return `<div class="panel turn">
+    <span class="muted">Runde ${lap} · ${pos+1} af ${n}</span>
+    <p class="who">Nu siger<b>${esc(S.players[cur])}</b>et ord</p>
+    <div class="chips turnlist">${order.map((i,k)=>`<span class="tchip ${k===pos?"now":k<pos?"done":""}">${esc(S.players[i])}</span>`).join("")}</div>
+    <div class="row"><button class="btn-ghost" id="prevTurn" ${sp===0?"disabled":""} aria-label="Forrige spiller">Tilbage</button><button class="btn-crew grow" id="nextTurn">${pos===n-1?"Start næste runde":"Næste: "+esc(S.players[order[pos+1]])}</button></div>
+  </div>`;
+}
+function stopTick(){ if(tick){ clearInterval(tick); tick=null; } if(S.round) S.round.running=false; }
+function bindDiscuss(){
+  const R=S.round;
+  const paint=()=>{ const t=document.getElementById("timer"); if(!t) return; t.textContent=fmt(R.left); t.classList.toggle("low",R.left<=30); };
+  document.getElementById("tgl").onclick=()=>{
+    if(R.running){ stopTick(); render(); return; }
+    if(R.left<=0) R.left=S.minutes*60;
+    R.running=true; render();
+    tick=setInterval(()=>{ R.left=Math.max(0,R.left-1); paint(); if(R.left>0 && R.left<=10) SFX.tick(); if(R.left===0){ stopTick(); beep(); render(); } },1000);
+  };
+  document.getElementById("rst").onclick=()=>{ stopTick(); R.left=S.minutes*60; render(); };
+  const rerunTurn=()=>{ const t=document.querySelector(".turn"); if(!t) return; t.outerHTML=turnPanel(); bindTurn(); };
+  function bindTurn(){
+    document.getElementById("nextTurn").onclick=()=>{ R.speak=(R.speak||0)+1; rerunTurn(); };
+    document.getElementById("prevTurn").onclick=()=>{ R.speak=Math.max(0,(R.speak||0)-1); rerunTurn(); };
+  }
+  bindTurn();
+  document.getElementById("toVote").onclick=()=>{ stopTick(); go("vote"); };
+}
+function beep(){ SFX.alarm(); try{ navigator.vibrate && navigator.vibrate([200,100,200]); }catch(e){} }
+/* ---------- Vote ---------- */
+const needVotes = R => R.chaos ? Math.min(S.imposters, maxImp()) : R.imps.length;
+function voteView(){
+  const R=S.round, need=needVotes(R);
+  return `
+  <div class="stage">
+    <h2>Afstemning</h2>
+    <p class="muted">Peg på hinanden på tre-to-nu. Vælg ${need>1?`de ${need} spillere`:"den spiller"}, flest stemmer gik på.</p>
+    <div class="grid">${S.players.map((p,i)=>`<button class="vote ${R.votes.includes(i)?"on":""}" data-v="${i}" aria-pressed="${R.votes.includes(i)}">${esc(p)}</button>`).join("")}</div>
+    <button class="btn-main" id="reveal" ${R.votes.length!==need?"disabled":""}>Afslør imposter${need>1?"ne":"en"}</button>
+  </div>`;
+}
+function bindVote(){
+  const R=S.round, need=needVotes(R);
+  app.querySelectorAll("[data-v]").forEach(b=>b.onclick=()=>{
+    const i=+b.dataset.v;
+    if(R.votes.includes(i)) R.votes=R.votes.filter(x=>x!==i);
+    else { R.votes.push(i); if(R.votes.length>need) R.votes.shift(); }
+    render(); });
+  document.getElementById("reveal").onclick=()=>go(S.sound?"suspense":"result");
+}
+
+/* ---------- Result ---------- */
+function endButtons(gain){
+  return `<section class="panel" style="text-align:left"><h3>Point</h3>${scoreList(gain)}</section>
+      <button class="btn-main" id="again">Næste runde</button>
+      <button class="btn-ghost" id="toSetup">Skift spillere eller indstillinger</button>`;
+}
+function resultView(){
+  const R=S.round;
+  if(R.chaos){
+    finish("none");
+    return `
+  <div class="stage">
+    <p class="muted">Kaos-runde</p>
+    <h1 class="pop" style="color:var(--accent)">Alle var imposter!</h1>
+    <div class="panel"><p>Der var intet hemmeligt ord i denne runde. Alle bluffede, og ingen får point.</p></div>
+    <p>I stemte på <b>${R.votes.map(i=>esc(S.players[i])).join(" og ")}</b></p>
+    ${endButtons(R.gain)}
+  </div>`;
+  }
+  const uc = R.mode==="undercover";
+  const caught = R.votes.filter(i=>R.imps.includes(i));
+  const allCaught = caught.length===R.imps.length;
+  const impNames = R.imps.map(i=>esc(S.players[i])).join(" og ");
+  let verdict="", action="";
+  if(allCaught && uc){
+    verdict = `<p class="verdict win"><b>I fandt ${R.imps.length>1?"dem":"imposteren"}! De andre vinder.</b></p>`;
+    finish("crew");
+  } else if(!allCaught){
+    verdict = `<p class="verdict lose"><b>${R.imps.length>1?"Imposterne slap væk!":"Imposteren slap væk!"}</b></p>`;
+    finish("imp");
+  } else if(R.guessed===null){
+    verdict = `<p class="verdict win"><b>I fangede ${R.imps.length>1?"dem":"imposteren"}!</b></p>
+      <p>Men ${impNames} får ét sidste gæt på ordet. Sig det højt, og tryk så her:</p>`;
+    action = `<div class="row"><button class="btn-ghost grow" id="g1">Gættede rigtigt</button><button class="btn-crew grow" id="g0">Gættede forkert</button></div>`;
+  } else if(R.guessed){
+    verdict = `<p class="verdict lose"><b>Fanget, men ordet blev gættet. Imposter${R.imps.length>1?"ne":"en"} vinder!</b></p>`;
+    finish("imp");
+  } else {
+    verdict = `<p class="verdict win"><b>Fanget og forkert gæt. De andre vinder!</b></p>`;
+    finish("crew");
+  }
+  const done = !allCaught || uc || R.guessed!==null;
+  return `
+  <div class="stage">
+    <p class="muted">${R.imps.length>1?"Imposterne var":"Imposteren var"}</p>
+    <h1 class="pop" style="color:var(--accent)">${impNames}</h1>
+    <div class="panel">
+      <span class="muted">Ordet var</span>
+      <h2>${esc(R.word)}</h2>
+      <span class="muted">${esc(R.cat)}</span>
+      ${uc&&R.decoy?`<span>Imposteren havde <b>${esc(R.decoy)}</b></span>`:""}
+    </div>
+    <p>I stemte på <b>${R.votes.map(i=>esc(S.players[i])).join(" og ")}</b> ${R.votes.map(i=>R.imps.includes(i)?'<span class="tag">imposter</span>':'').join(" ")}</p>
+    ${verdict}${action}
+    ${done?endButtons(R.gain):""}
+  </div>`;
+}
+function finish(winner){
+  const R=S.round; if(R.scored) return;
+  R.scored=true; R.winner=winner; R.gain={};
+  S.players.forEach((p,i)=>{
+    const imp=R.imps.includes(i);
+    const g = winner==="none" ? 0 : winner==="imp" ? (imp?2:0) : (imp?0:1);
+    if(g){ R.gain[p]=g; S.scores[p]=(S.scores[p]||0)+g; }
+  });
+  save();
+}
+function scoreList(gain={}){
+  const rows = S.players.slice().sort((a,b)=>(S.scores[b]||0)-(S.scores[a]||0));
+  return `<div class="scores">${rows.map(p=>`<div class="score"><span>${esc(p)}</span><span>${gain[p]?`<span class="plus">+${gain[p]}</span>`:""}<span class="pts">${S.scores[p]||0}</span></span></div>`).join("")}</div>
+  <p class="foot" style="text-align:left">Imposter vinder: +2 til imposteren. Imposter fanget: +1 til alle andre.</p>`;
+}
+function bindResult(){
+  const R=S.round;
+  if(R.winner && !R.fxDone){ R.fxDone=true;
+    if(R.winner==="imp"){ SFX.lose(); const h=app.querySelector("h1"); if(h) h.classList.add("shake"); confetti(["#D63A55","#8A1C2E","#F0566F"]); }
+    else { SFX.win(); confetti(); } }
+  const g1=document.getElementById("g1"), g0=document.getElementById("g0");
+  if(g1) g1.onclick=()=>{R.guessed=true; render();};
+  if(g0) g0.onclick=()=>{R.guessed=false; render();};
+  const a=document.getElementById("again"); if(a) a.onclick=startRound;
+  const t=document.getElementById("toSetup"); if(t) t.onclick=()=>{ S.round=null; go("setup"); };
+}
+
+/* ---------- Lyd & effekter ---------- */
+let actx=null;
+function ac(){ if(!S.sound) return null; try{ actx = actx || new (window.AudioContext||window.webkitAudioContext)(); if(actx.state==="suspended") actx.resume(); return actx; }catch(e){ return null; } }
+function tone(f,t0,dur,type,vol,f2){
+  const c=ac(); if(!c) return;
+  try{ const o=c.createOscillator(), g=c.createGain(), t=c.currentTime+t0;
+    o.type=type||"sine"; o.frequency.setValueAtTime(f,t); if(f2) o.frequency.exponentialRampToValueAtTime(f2,t+dur);
+    g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(vol||.15,t+.01); g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+    o.connect(g); g.connect(c.destination); o.start(t); o.stop(t+dur+.05); }catch(e){}
+}
+const SFX = {
+  flip(){ tone(280,0,.14,"triangle",.12,880); },
+  tick(){ tone(1200,0,.06,"square",.04); },
+  alarm(){ [0,.25,.5].forEach(t=>tone(880,t,.18,"square",.1)); },
+  drum(){ for(let i=0;i<26;i++) tone(70+Math.random()*30, i*.07, .07, "triangle", .06+i*.007); tone(110,1.9,.5,"sawtooth",.12,55); },
+  win(){ [523,659,784,1047].forEach((f,i)=>tone(f,i*.12,i===3?.6:.25,"triangle",.16)); },
+  lose(){ [392,370,349].forEach((f,i)=>tone(f,i*.32,.3,"sawtooth",.07)); tone(330,.96,1,"sawtooth",.07,196); }
+};
+function confetti(colors){
+  if(!S.sound) return;
+  if(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const cv=document.createElement("canvas"); cv.className="fx"; document.body.appendChild(cv);
+  const ctx=cv.getContext("2d"), dpr=window.devicePixelRatio||1;
+  const W=cv.width=innerWidth*dpr, H=cv.height=innerHeight*dpr;
+  const pal=colors||["#D63A55","#2C63D8","#F2B53A","#1E8A57","#9B5DE5","#FF8FAB"];
+  const ps=Array.from({length:160},()=>({x:W*(.2+Math.random()*.6), y:H*.35, vx:(Math.random()-.5)*16*dpr, vy:(-6-Math.random()*14)*dpr, s:(5+Math.random()*7)*dpr, r:Math.random()*6, vr:(Math.random()-.5)*.3, c:pal[Math.floor(Math.random()*pal.length)]}));
+  const t0=performance.now();
+  (function step(now){
+    const t=now-t0; ctx.clearRect(0,0,W,H);
+    ps.forEach(p=>{ p.vy+=.35*dpr; p.vx*=.99; p.x+=p.vx; p.y+=p.vy; p.r+=p.vr;
+      ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.r); ctx.globalAlpha=Math.max(0,1-t/3200); ctx.fillStyle=p.c; ctx.fillRect(-p.s/2,-p.s/4,p.s,p.s/2); ctx.restore(); });
+    if(t<3200) requestAnimationFrame(step); else cv.remove();
+  })(t0);
+}
+function suspenseView(){
+  const n=S.round.chaos ? 1 : S.round.imps.length;
+  return `<div class="stage suspense"><p class="muted">Stemmerne er talt</p><h2>Og ${n>1?"imposterne var":"imposteren var"}</h2><div class="dots"><i></i><i></i><i></i></div></div>`;
+}
+function bindSuspense(){ SFX.drum(); setTimeout(()=>{ if(S.screen==="suspense") go("result"); }, 2300); }
+
+/* ---------- Render ---------- */
+const VIEWS = { suspense:[suspenseView,bindSuspense], setup:[setupView,bindSetup], pass:[passView,bindPass], discuss:[discussView,bindDiscuss], vote:[voteView,bindVote], result:[resultView,bindResult] };
+function render(){
+  if(S.screen!=="setup" && !S.round) S.screen="setup";
+  const [v,b]=VIEWS[S.screen]; app.innerHTML=v(); b();
+}
+function start(data){
+  if(data && data.S){ S = data.S; if(S.round) S.round.running=false; if(S.screen==="suspense") S.screen="result"; }
+  render();
+}
+window.claude?.hot?.snapshot?.(()=>({S}));
+window.claude?.hot?.ready ? window.claude.hot.ready(start) : start(window.claude?.hot?.data ?? {});
+</script>
+
+<script>
+if("serviceWorker" in navigator && location.protocol.startsWith("http")) navigator.serviceWorker.register("sw.js").catch(()=>{});
+</script>
+</body>
+</html>
