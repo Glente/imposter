@@ -78,6 +78,12 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .btn-main{background:var(--accent);color:var(--accent-fg);font-size:1.15rem;padding:16px 20px;min-height:58px;width:100%;font-family:var(--display);font-weight:800;letter-spacing:.01em}
 .btn-crew{background:var(--crew);color:#fff}
 .btn-ghost{background:transparent;border:1.5px solid var(--line)}
+.plist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.plist li{display:flex;align-items:center;gap:6px;background:var(--surface-2);border-radius:12px;padding:4px 4px 4px 12px}
+.plist .pnum{font-family:var(--display);font-weight:800;color:var(--muted);min-width:1.4em;font-variant-numeric:tabular-nums}
+.plist .pname{flex:1;min-width:0;font-weight:600;overflow-wrap:anywhere}
+.plist button{min-height:40px;min-width:40px;padding:0;background:var(--surface);font-size:1.1rem}
+.plist button.del{background:transparent;color:var(--muted);font-size:1.3rem}
 .chips{display:flex;flex-wrap:wrap;gap:8px}
 .chip{display:inline-flex;align-items:center;gap:6px;background:var(--surface-2);border-radius:999px;padding:7px 8px 7px 14px;font-weight:600}
 .chip button{min-height:0;padding:2px 8px;border-radius:999px;background:transparent;color:var(--muted);font-size:1.1rem;line-height:1}
@@ -255,7 +261,11 @@ function setupView(){
       <input id="nameIn" class="grow" type="text" placeholder="Tilføj navn" maxlength="18">
       <button type="submit" class="btn-crew">Tilføj</button>
     </form>
-    <div class="chips">${S.players.map((p,i)=>`<span class="chip">${esc(p)}<button data-del="${i}" aria-label="Fjern ${esc(p)}">×</button></span>`).join("")}</div>
+    ${n>1?`<p class="muted small">Sæt navnene i den rækkefølge, I sidder, med uret. Telefonen og ordrunden går den vej rundt.</p>`:""}
+    <ol class="plist">${S.players.map((p,i)=>`<li><span class="pnum">${i+1}</span><span class="pname">${esc(p)}</span>
+      <button data-mv="${i}:-1" ${i===0?"disabled":""} aria-label="Flyt ${esc(p)} op">↑</button>
+      <button data-mv="${i}:1" ${i===n-1?"disabled":""} aria-label="Flyt ${esc(p)} ned">↓</button>
+      <button data-del="${i}" class="del" aria-label="Fjern ${esc(p)}">×</button></li>`).join("")}</ol>
     <p class="err" id="err"></p>
   </section>
 
@@ -312,6 +322,11 @@ function bindSetup(){
     document.getElementById("nameIn").focus();
   };
   app.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{ S.players.splice(+b.dataset.del,1); save(); render(); });
+  app.querySelectorAll("[data-mv]").forEach(b=>b.onclick=()=>{
+    const [i,d]=b.dataset.mv.split(":").map(Number), j=i+d;
+    if(j<0||j>=S.players.length) return;
+    [S.players[i],S.players[j]]=[S.players[j],S.players[i]]; save(); render();
+    const nb=app.querySelector(`[data-mv="${j}:${d}"]`); (nb && !nb.disabled ? nb : app.querySelector(`[data-mv="${j}:${-d}"]`))?.focus(); });
   app.querySelectorAll("[data-cat]").forEach(c=>c.onchange=()=>{
     const k=c.dataset.cat; S.cats = c.checked ? [...S.cats,k] : S.cats.filter(x=>x!==k); save(); render(); });
   const CATS = allCats();
